@@ -1,1 +1,3 @@
-node_modules\n.next\n.env*\nserver/.env\nserver/node_modules\nMain/.gitignore\n
+node_modules
+.next
+.env*
