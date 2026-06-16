@@ -61,8 +61,7 @@ const CustomerSchema = new mongoose.Schema(
   }
 );
 
-// Index on phone for faster lookups
-CustomerSchema.index({ phone: 1 });
+// Indexes
 CustomerSchema.index({ whatsappVerified: 1 });
 CustomerSchema.index({ createdAt: -1 });
 

@@ -106,7 +106,7 @@ const CouponSchema = new Schema<ICoupon>(
 );
 
 // Indexes for performance
-CouponSchema.index({ code: 1 });
+// `code` is declared `unique: true` on the field — avoid duplicate index
 CouponSchema.index({ expiryDate: 1 });
 CouponSchema.index({ couponType: 1, isActive: 1, createdAt: -1 });
 
