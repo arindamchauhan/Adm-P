@@ -17,6 +17,7 @@ type HeroProductApi = {
   description: string;
   category: string;
   price: number;
+  originalPrice?: number;
   launchSoon?: boolean;
   stock?: number;
   images?: { url: string }[];
@@ -35,7 +36,7 @@ export default function ProductHero({ onBuyNow, onSelectionChange }: ProductHero
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
 
   const basePrice = Math.max(1, Number(featuredProduct?.price || 399));
-  const baseMrp = Math.max(basePrice + 1, Math.round(basePrice * 1.5));
+  const baseMrp = Math.max(basePrice + 1, Number(featuredProduct?.originalPrice || 649));
   const maxAllowedQuantity = Math.max(1, Math.min(5, Number(featuredProduct?.stock || 5)));
   const isLaunchingSoon = Boolean(featuredProduct?.launchSoon);
   const isInStock = Number(featuredProduct?.stock ?? 1) > 0;

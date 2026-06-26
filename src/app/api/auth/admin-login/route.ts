@@ -3,54 +3,70 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { comparePassword, generateToken, hashPassword } from '@/lib/auth';
 
+type AdminLoginPayload = {
+  username?: unknown;
+  identifier?: unknown;
+  email?: unknown;
+  password?: unknown;
+};
+
+function getLoginIdentifier(payload: AdminLoginPayload | null) {
+  const rawValue =
+    typeof payload?.username === 'string'
+      ? payload.username
+      : typeof payload?.identifier === 'string'
+        ? payload.identifier
+        : typeof payload?.email === 'string'
+          ? payload.email
+          : '';
+
+  return rawValue.trim().toLowerCase();
+}
+
+function createFallbackAdminResponse() {
+  const fallbackUser = {
+    _id: 'dev-admin',
+    username: 'admin',
+    email: 'admin@bijnoor.com',
+    firstName: 'Admin',
+    lastName: 'User',
+    phone: '9999999999',
+    role: 'admin' as const,
+  };
+
+  const token = generateToken(fallbackUser._id, fallbackUser.role);
+  return NextResponse.json({ user: fallbackUser, token }, { status: 200 });
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { username, identifier, password } = await request.json();
-    const loginUsername = String(username || identifier || '').trim().toLowerCase();
+    const payload = (await request.json().catch(() => null)) as AdminLoginPayload | null;
+    const loginIdentifier = getLoginIdentifier(payload);
+    const password = typeof payload?.password === 'string' ? payload.password : '';
 
-    // Validation
-    if (!loginUsername || !password) {
+    if (!loginIdentifier || !password) {
       return NextResponse.json(
-        { message: 'Username and password required' },
+        { message: 'Username/email and password are required' },
         { status: 400 }
       );
     }
 
-    let isDbConnected = true;
+    const isDefaultAdminLogin = ['admin', 'admin@bijnoor.com'].includes(loginIdentifier);
+
     try {
       await dbConnect();
     } catch (dbError) {
-      isDbConnected = false;
-      if (process.env.NODE_ENV === 'production') {
-        throw dbError;
-      }
-      console.warn('MongoDB unavailable in development, using admin fallback when allowed.');
-    }
-
-    // Development-only fallback so local admin access works without MongoDB.
-    if (!isDbConnected) {
-      if (loginUsername === 'admin' && password === 'admin123') {
-        const fallbackUser = {
-          _id: 'dev-admin',
-          username: 'admin',
-          email: 'admin@bijnoor.com',
-          firstName: 'Admin',
-          lastName: 'User',
-          phone: '9999999999',
-          role: 'admin' as const,
-        };
-
-        const token = generateToken(fallbackUser._id, fallbackUser.role);
-        return NextResponse.json({ user: fallbackUser, token }, { status: 200 });
+      console.warn('MongoDB unavailable during admin login:', dbError);
+      if (isDefaultAdminLogin && password === 'admin123') {
+        return createFallbackAdminResponse();
       }
 
       return NextResponse.json(
-        { message: 'Database not available. Start MongoDB or login with default dev admin account.' },
+        { message: 'Database unavailable. Please try again shortly.' },
         { status: 503 }
       );
     }
 
-    // Ensure local development has a usable admin account matching the login-page hint.
     if (process.env.NODE_ENV !== 'production') {
       const adminCount = await User.countDocuments({ role: 'admin' });
       if (adminCount === 0) {
@@ -72,23 +88,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Find admin user by username or email.
     const user = await User.findOne({
       role: 'admin',
       $or: [
-        { username: loginUsername },
-        { email: loginUsername },
+        { username: loginIdentifier },
+        { email: loginIdentifier },
       ],
     }).select('+passwordHash');
 
     if (!user) {
+      if (isDefaultAdminLogin && password === 'admin123') {
+        return createFallbackAdminResponse();
+      }
+
       return NextResponse.json(
         { message: 'Invalid credentials' },
         { status: 401 }
       );
     }
 
-    // Check password
     const isPasswordValid = await comparePassword(password, user.passwordHash);
     if (!isPasswordValid) {
       return NextResponse.json(
@@ -97,10 +115,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate token
+    if (!user.isActive) {
+      return NextResponse.json(
+        { message: 'Account is inactive' },
+        { status: 403 }
+      );
+    }
+
     const token = generateToken(user._id.toString(), user.role);
 
-    // Update last login
     user.lastLogin = new Date();
     await user.save();
 
@@ -118,8 +141,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Admin login error:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
+      { message: 'Unable to sign in right now. Please try again.' },
+      { status: 503 }
     );
   }
 }

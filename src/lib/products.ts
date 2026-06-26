@@ -4,7 +4,9 @@ export const PRODUCTS: Product[] = [
   {
     id: "1",
     name: "BijNoor Natural Hair Mask",
-    price: 1499,
+    price: 399,
+    originalPrice: 649,
+    discount: 38,
     description:
       "Deep nourishment hair mask with natural botanicals for smooth, healthy, and stronger hair.",
     image:

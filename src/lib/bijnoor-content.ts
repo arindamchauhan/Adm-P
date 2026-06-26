@@ -6,7 +6,7 @@ export const productInfo = {
     "Transform your hair with BijNoor's luxurious Natural Hair Mask—a powerhouse treatment formulated to deeply nourish from root to tip. Enriched with botanical extracts and natural proteins, this intensive mask penetrates the scalp to strengthen hair roots, reduce breakage by up to 90%, and restore intense moisture to parched lengths. Experience visibly smoother, shinier, and more manageable hair within weeks. Perfect for weekly or bi-weekly deep conditioning treatments, this mask revitalizes tired, damaged, and color-treated hair while keeping your scalp healthy and balanced. Suitable for all hair types—from fine and straight to thick and curly.",
   imageUrl:
     "https://images.unsplash.com/photo-1522337094846-8a81829b8b31?w=1200&h=900&fit=crop",
-  priceLabel: "From \u20b9399",
+  priceLabel: "₹399 after ₹649 MRP",
   ratingLabel: "Rated 4.8/5 by 2,847 verified customers",
   disclaimer:
     "For cosmetic use only. Not intended to diagnose, treat, cure or prevent any disease.",
