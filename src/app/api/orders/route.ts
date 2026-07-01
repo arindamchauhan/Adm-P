@@ -115,13 +115,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid product details" }, { status: 400 });
     }
 
-    if (!otpVerificationToken) {
-      return NextResponse.json({ error: "Phone verification is required" }, { status: 400 });
-    }
-
     const phoneNumber = String(customer.phoneNumber || "").replace(/\D/g, "");
 
-    if (otpVerificationToken.startsWith("firebase:")) {
+    if (otpVerificationToken) {
+      if (otpVerificationToken.startsWith("firebase:")) {
       const firebaseIdToken = otpVerificationToken.slice("firebase:".length).trim();
 
       if (!firebaseIdToken) {
@@ -152,16 +149,17 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      const otpSession = await OtpVerification.findOne({ verificationToken: otpVerificationToken });
-      if (!otpSession || !otpSession.isVerified) {
-        return NextResponse.json({ error: "Invalid OTP verification token" }, { status: 401 });
-      }
+        const otpSession = await OtpVerification.findOne({ verificationToken: otpVerificationToken });
+        if (!otpSession || !otpSession.isVerified) {
+          return NextResponse.json({ error: "Invalid OTP verification token" }, { status: 401 });
+        }
 
-      if (otpSession.phoneNumber !== phoneNumber) {
-        return NextResponse.json(
-          { error: "Phone number does not match verified OTP session" },
-          { status: 400 }
-        );
+        if (otpSession.phoneNumber !== phoneNumber) {
+          return NextResponse.json(
+            { error: "Phone number does not match verified OTP session" },
+            { status: 400 }
+          );
+        }
       }
     }
 

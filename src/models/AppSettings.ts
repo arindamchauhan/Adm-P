@@ -53,6 +53,6 @@ const AppSettingsSchema = new Schema<IAppSettings>(
   { timestamps: true }
 );
 
-AppSettingsSchema.index({ singletonKey: 1 }, { unique: true });
+// singletonKey is declared `unique: true` on the field — no duplicate schema index needed
 
 export default mongoose.models.AppSettings || mongoose.model<IAppSettings>("AppSettings", AppSettingsSchema);

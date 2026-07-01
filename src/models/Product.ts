@@ -167,9 +167,8 @@ const ProductSchema = new Schema<IProduct>(
 );
 
 // Indexes for performance
-ProductSchema.index({ slug: 1 });
+// `slug` and `sku` are declared `unique` on their fields — avoid duplicate indexes
 ProductSchema.index({ category: 1 });
-ProductSchema.index({ sku: 1 });
 ProductSchema.index({ name: 'text', description: 'text' });
 
 export default mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);

@@ -46,9 +46,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           whileHover={{ scale: 1.06 }}
           transition={{ duration: 0.4 }}
         />
-        <div className="absolute top-2 right-2 bg-gold text-white px-2.5 py-0.5 rounded-full text-xs font-semibold">
-          {isLaunchingSoon ? "Launching Soon" : product.stock > 0 ? "In Stock" : "Sold Out"}
-        </div>
       </div>
 
       {/* Content */}

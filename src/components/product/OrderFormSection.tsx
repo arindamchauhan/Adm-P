@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import OTPVerification from "@/components/OTPVerification";
 
 type FormState = {
   fullName: string;
@@ -126,10 +125,10 @@ export default function OrderFormSection({
   const [orderId, setOrderId] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const [otpToken, setOtpToken] = useState("");
   const [deliveryState, setDeliveryState] = useState<DeliveryState | null>(null);
   const [isCheckingPincode, setIsCheckingPincode] = useState(false);
   const [showExitPrompt, setShowExitPrompt] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
   const [hasSessionInteraction, setHasSessionInteraction] = useState(false);
   const [abandonmentSaved, setAbandonmentSaved] = useState(false);
   const [supportSettings, setSupportSettings] = useState<PublicSiteSettings>(defaultSupportSettings);
@@ -144,8 +143,8 @@ export default function OrderFormSection({
 
   const fieldErrors = useMemo(() => getFieldErrors(form), [form]);
   const isFormValid = Object.keys(fieldErrors).length === 0;
-  const isOtpVerified = Boolean(otpToken);
-  const isContactStepValid = !fieldErrors.fullName && !fieldErrors.phoneNumber && !fieldErrors.emailAddress && isOtpVerified;
+  const isOtpVerified = true;
+  const isContactStepValid = !fieldErrors.fullName && !fieldErrors.phoneNumber && !fieldErrors.emailAddress;
   const isAddressStepValid = !fieldErrors.houseAddress && !fieldErrors.city && !fieldErrors.district && !fieldErrors.state && !fieldErrors.pincode && Boolean(deliveryState?.isServiceable);
   const hasDraftData = Boolean(form.fullName || form.phoneNumber || form.emailAddress || form.houseAddress || form.city || form.district || form.state || form.pincode);
 
@@ -192,6 +191,22 @@ export default function OrderFormSection({
     setSelectedUnitPrice(safeUnitPrice);
     setSelectedProductName(safeProductName);
   }, [initialProductName, initialUnitPrice]);
+
+  useEffect(() => {
+    try {
+      const alreadySeen = sessionStorage.getItem("bijnoor-offer-modal-seen");
+      if (alreadySeen === "1") return;
+
+      const timer = window.setTimeout(() => {
+        setShowOfferModal(true);
+        sessionStorage.setItem("bijnoor-offer-modal-seen", "1");
+      }, 700);
+
+      return () => window.clearTimeout(timer);
+    } catch {
+      return undefined;
+    }
+  }, []);
 
   useEffect(() => {
     const safeQuantity = Math.min(5, Math.max(1, initialQuantity));
@@ -330,8 +345,8 @@ export default function OrderFormSection({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!isFormValid || !isOtpVerified || !deliveryState?.isServiceable) {
-      setError("Please complete verification and required details before placing your order.");
+    if (!isFormValid || !deliveryState?.isServiceable) {
+      setError("Please complete the required details before placing your order.");
       return;
     }
 
@@ -358,7 +373,7 @@ export default function OrderFormSection({
           method: form.paymentMethod,
           status: "pending",
         },
-        otpVerificationToken: otpToken,
+        otpVerificationToken: "",
         product: {
           name: selectedProductName,
           quantity: form.quantity,
@@ -378,7 +393,6 @@ export default function OrderFormSection({
 
       setOrderId(placedOrderId);
       setForm(initialState);
-      setOtpToken("");
       setDeliveryState(null);
       localStorage.removeItem(FORM_STORAGE_KEY);
       setIsSubmitting(false);
@@ -420,11 +434,11 @@ export default function OrderFormSection({
                 <div className="rounded-2xl border border-[#dce5de] bg-gradient-to-br from-[#f7fbf8] via-[#fbfdfc] to-white p-4 shadow-[0_8px_24px_rgba(31,111,61,0.08)] sm:p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#5f7866]">Step 1</p>
                   <h3 className="mt-1 font-heading text-xl text-[#1f2f20]">Contact Details</h3>
-                  <p className="mt-1 text-sm text-[#5a7260]">Use a reachable phone number for OTP verification.</p>
+                  <p className="mt-1 text-sm text-[#5a7260]">We’ll use your contact details to keep your order organized.</p>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <input required placeholder="Full Name" value={form.fullName} onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))} autoComplete="name" className="rounded-xl border border-[#d2dfd5] bg-white px-4 py-3 text-sm text-[#26362a] shadow-sm focus:border-[#2f8a53] focus:outline-none focus:ring-2 focus:ring-[#2f8a53]/20" />
-                    <input required placeholder="Phone Number" value={form.phoneNumber} inputMode="numeric" autoComplete="tel" maxLength={10} onChange={(e) => { setForm((s) => ({ ...s, phoneNumber: e.target.value.replace(/\D/g, "") })); setOtpToken(""); }} className="rounded-xl border border-[#d2dfd5] bg-white px-4 py-3 text-sm text-[#26362a] shadow-sm focus:border-[#2f8a53] focus:outline-none focus:ring-2 focus:ring-[#2f8a53]/20" />
+                    <input required placeholder="Phone Number" value={form.phoneNumber} inputMode="numeric" autoComplete="tel" maxLength={10} onChange={(e) => setForm((s) => ({ ...s, phoneNumber: e.target.value.replace(/\D/g, "") }))} className="rounded-xl border border-[#d2dfd5] bg-white px-4 py-3 text-sm text-[#26362a] shadow-sm focus:border-[#2f8a53] focus:outline-none focus:ring-2 focus:ring-[#2f8a53]/20" />
                     {fieldErrors.fullName ? <p className="-mt-1 text-xs text-[#b3261e]">{fieldErrors.fullName}</p> : <div />}
                     {fieldErrors.phoneNumber ? <p className="-mt-1 text-xs text-[#b3261e]">{fieldErrors.phoneNumber}</p> : <div />}
                     <input required type="email" placeholder="Email Address" value={form.emailAddress} onChange={(e) => setForm((s) => ({ ...s, emailAddress: e.target.value }))} autoComplete="email" className="rounded-xl border border-[#d2dfd5] bg-white px-4 py-3 text-sm text-[#26362a] shadow-sm focus:border-[#2f8a53] focus:outline-none focus:ring-2 focus:ring-[#2f8a53]/20 sm:col-span-2" />
@@ -432,24 +446,12 @@ export default function OrderFormSection({
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-[#d7e4da] bg-white p-4 shadow-[0_8px_18px_rgba(31,111,61,0.07)] sm:p-5">
+                <div className="rounded-2xl border border-[#d7e4da] bg-[#f8fcf9] p-4 shadow-[0_8px_18px_rgba(31,111,61,0.07)] sm:p-5">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-heading text-lg text-[#223528]">OTP Phone Verification</p>
-                    <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] ${isOtpVerified ? "bg-[#e7f6ec] text-[#1f6f3d]" : "bg-[#f3f6f4] text-[#607667]"}`}>{isOtpVerified ? "Verified" : "Required"}</span>
+                    <p className="font-heading text-lg text-[#223528]">Phone Verification</p>
+                    <span className="rounded-full bg-[#e7f6ec] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#1f6f3d]">Disabled</span>
                   </div>
-                  <div className="mt-4">
-                    <OTPVerification
-                      phoneNumber={form.phoneNumber}
-                      onVerificationSuccess={(verificationToken) => {
-                        setOtpToken(verificationToken);
-                        setError("");
-                      }}
-                      onVerificationFailed={(message) => {
-                        setOtpToken("");
-                        setError(message);
-                      }}
-                    />
-                  </div>
+                  <p className="mt-3 text-sm text-[#5a7260]">Phone verification is temporarily disabled for public checkout. You can continue without it.</p>
                 </div>
 
                 <div className="flex justify-end">
@@ -547,7 +549,7 @@ export default function OrderFormSection({
 
                 <div className="flex items-center justify-between pt-1">
                   <button type="button" onClick={() => setStep(2)} className="rounded-xl border border-[#cedfd2] bg-white px-5 py-2.5 text-sm font-semibold text-[#3f5b46] hover:bg-[#f7fbf8]">Back</button>
-                  <button type="submit" disabled={isSubmitting || !isFormValid || !isOtpVerified || !deliveryState?.isServiceable} className="rounded-xl bg-gradient-to-r from-[#1f6f3d] to-[#2f8a53] px-6 py-3 text-sm font-bold tracking-[0.02em] text-white shadow-[0_10px_24px_rgba(31,111,61,0.2)] disabled:opacity-60">{isSubmitting ? "Placing Order..." : "Place Order"}</button>
+                  <button type="submit" disabled={isSubmitting || !isFormValid || !deliveryState?.isServiceable} className="rounded-xl bg-gradient-to-r from-[#1f6f3d] to-[#2f8a53] px-6 py-3 text-sm font-bold tracking-[0.02em] text-white shadow-[0_10px_24px_rgba(31,111,61,0.2)] disabled:opacity-60">{isSubmitting ? "Placing Order..." : "Place Order"}</button>
                 </div>
               </div>
             ) : null}
@@ -583,7 +585,7 @@ export default function OrderFormSection({
             <ul className="mt-5 space-y-2 text-xs text-[#4f6552]">
               <li>Fast checkout with guided steps</li>
               <li>Pincode-based serviceability and ETA</li>
-              <li>OTP verification protects against fake orders</li>
+              <li>Public checkout is currently running without OTP verification</li>
             </ul>
 
             <button type="button" onClick={() => { localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(form)); }} className="mt-4 w-full rounded-lg border border-[#d5e2d7] bg-white px-3 py-2 text-xs font-semibold text-[#2e4c36]">
@@ -592,6 +594,50 @@ export default function OrderFormSection({
           </aside>
         </div>
       </div>
+
+      {showOfferModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
+          <div className="flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-[28px] border border-white/20 bg-gradient-to-br from-[#1f6f3d] via-[#2f8a53] to-[#5dbb75] p-4 text-white shadow-2xl sm:p-6 lg:p-8">
+            <div className="flex flex-1 flex-col justify-between gap-6 rounded-[24px] border border-white/20 bg-white/10 p-4 backdrop-blur sm:p-6 lg:p-8">
+              <div className="flex items-start justify-between gap-3">
+                <div className="rounded-full border border-white/30 bg-white/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#f8fff9]">Limited time</div>
+                <button type="button" onClick={() => setShowOfferModal(false)} className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-sm font-semibold text-white hover:bg-white/20">Close</button>
+              </div>
+
+              <div className="grid flex-1 gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+                <div className="space-y-4">
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#e8fbe8] sm:text-base">Order through WhatsApp</p>
+                  <h3 className="max-w-2xl text-3xl font-black leading-tight sm:text-4xl lg:text-6xl">One-click order. Fast support. Better price.</h3>
+                  <div className="rounded-2xl border border-white/20 bg-[#fffdf7]/15 p-4 shadow-inner sm:p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#f7ffe8]">Special offer</p>
+                    <p className="mt-2 text-4xl font-black text-white sm:text-5xl">₹100 off</p>
+                    <p className="mt-1 text-xl font-semibold text-[#efffe8] sm:text-2xl">Get it for ₹299</p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <a href={`https://wa.me/${supportSettings.supportWhatsapp}?text=${encodeURIComponent("Hi! I want to order the BijNoor hair mask with the ₹299 offer.")}`} target="_blank" rel="noreferrer" onClick={() => saveAbandonment("whatsapp")} className="rounded-2xl bg-white px-5 py-3 text-sm font-bold text-[#1f6f3d] shadow-lg transition hover:scale-[1.01]">Order on WhatsApp</a>
+                    <button type="button" onClick={() => setShowOfferModal(false)} className="rounded-2xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-semibold text-white">Continue to Checkout</button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 rounded-[24px] border border-white/20 bg-[#fdfefc]/10 p-4 shadow-inner sm:p-5">
+                  <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
+                    <p className="text-lg font-semibold">Free delivery</p>
+                    <p className="mt-1 text-sm text-[#f2fff4]">Quick doorstep delivery on eligible orders.</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
+                    <p className="text-lg font-semibold">Expert support</p>
+                    <p className="mt-1 text-sm text-[#f2fff4]">Guidance from our team for every order.</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
+                    <p className="text-lg font-semibold">One-click ordering</p>
+                    <p className="mt-1 text-sm text-[#f2fff4]">Start your order instantly from WhatsApp.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {showExitPrompt ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">

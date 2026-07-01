@@ -15,6 +15,6 @@ const SubscriberSchema = new Schema<ISubscriber>(
   { timestamps: true }
 );
 
-SubscriberSchema.index({ email: 1 }, { unique: true });
+// `email` is already declared `unique: true` on the field — avoid duplicate index
 
 export default mongoose.models.Subscriber || mongoose.model<ISubscriber>("Subscriber", SubscriberSchema);

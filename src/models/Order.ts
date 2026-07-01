@@ -184,7 +184,7 @@ const OrderSchema = new Schema<IOrder>(
 );
 
 // Indexes for performance
-OrderSchema.index({ orderId: 1 });
+// `orderId` is declared `unique: true` on the field — avoid duplicate index
 OrderSchema.index({ userId: 1 });
 OrderSchema.index({ 'customer.email': 1 });
 OrderSchema.index({ createdAt: -1 });

@@ -83,7 +83,7 @@ const InvoiceSchema = new mongoose.Schema(
 );
 
 // Indexes
-InvoiceSchema.index({ billNumber: 1 });
+// `billNumber` is declared `unique: true` on the field — avoid duplicate index
 InvoiceSchema.index({ orderId: 1 });
 InvoiceSchema.index({ customerId: 1 });
 InvoiceSchema.index({ status: 1 });

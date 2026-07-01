@@ -23,7 +23,7 @@ const OtpVerificationSchema = new Schema<IOtpVerification>(
     isVerified: { type: Boolean, default: false, index: true },
     isLocked: { type: Boolean, default: false },
     failedAttempts: { type: Number, default: 0 },
-    expiresAt: { type: Date, required: true, index: true },
+    expiresAt: { type: Date, required: true },
     verifiedAt: { type: Date },
   },
   { timestamps: true }

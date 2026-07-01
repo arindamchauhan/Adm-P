@@ -81,7 +81,7 @@ const QuickOrderSchema = new Schema<IQuickOrder>(
   { timestamps: true }
 );
 
-QuickOrderSchema.index({ orderId: 1 }, { unique: true });
+// `orderId` is declared `unique: true` on the field — avoid duplicate index
 QuickOrderSchema.index({ createdAt: -1 });
 
 export default mongoose.models.QuickOrder || mongoose.model<IQuickOrder>("QuickOrder", QuickOrderSchema);
